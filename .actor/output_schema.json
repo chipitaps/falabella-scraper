@@ -3,7 +3,7 @@
     "title": "Falabella Product Scraper Output",
     "properties": {
         "products": {
-            "type": "array",
+            "type": "string",
             "title": "Products",
             "template": "{{links.apiDefaultDatasetUrl}}/items?view=overview"
         }
