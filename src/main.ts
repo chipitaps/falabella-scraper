@@ -63,15 +63,29 @@ const extractProduct = ($: cheerio.CheerioAPI, c: cheerio.Cheerio<any>, imageMap
   let oldPrice = extractOldPrice(c);
   const discount = extractDiscount(c);
   
+  // Parse numeric prices
+  const priceNumeric = parsePrice(price);
+  
   // Calculate old price from discount if missing
   if (oldPrice === 'N/A' && discount !== 'N/A') {
     const discountPercent = parseInt(discount.replace(/[^\d]/g, ''));
     if (discountPercent > 0 && discountPercent < 100) {
-      oldPrice = `$ ${Math.round(parsePrice(price) / (1 - discountPercent / 100)).toLocaleString('es-CO')}`;
+      oldPrice = `$ ${Math.round(priceNumeric / (1 - discountPercent / 100)).toLocaleString('es-CO')}`;
     }
   }
   
-  return { title, price, oldPrice: discount === 'N/A' ? 'N/A' : oldPrice, discount, url: extractUrl($, c), image: extractImage($, c, imageMap) };
+  const oldPriceNumeric = oldPrice === 'N/A' ? null : parsePrice(oldPrice);
+  
+  return { 
+    title, 
+    price, 
+    priceNumeric,
+    oldPrice: discount === 'N/A' ? 'N/A' : oldPrice, 
+    oldPriceNumeric,
+    discount, 
+    url: extractUrl($, c), 
+    image: extractImage($, c, imageMap) 
+  };
 };
 
 const parsePrice = (priceStr: string): number => parseInt(priceStr.replace(/[^\d]/g, '')) || 0;
@@ -84,7 +98,7 @@ const { searchFor = 'items', searchQuery, maxProducts = 100, minPrice, maxPrice 
 
 console.log(`Fetching ${searchFor}...`);
 
-const products: { title: string; price: string; oldPrice: string; discount: string; url: string; image: string }[] = [];
+const products: { title: string; price: string; priceNumeric: number; oldPrice: string; oldPriceNumeric: number | null; discount: string; url: string; image: string }[] = [];
 const seenUrls = new Set<string>(); // Track URLs to avoid duplicates in real-time
 
 const crawler = new PlaywrightCrawler({

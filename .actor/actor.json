@@ -24,9 +24,10 @@
 							"image",
 							"title",
 							"price",
-							"discount",
 							"oldPrice",
-							"productCount",
+							"discount",
+							"priceNumeric",
+							"oldPriceNumeric",
 							"url"
 						]
 					},
@@ -34,31 +35,35 @@
 						"component": "table",
 						"properties": {
 							"image": {
-								"label": "Image",
+								"label": "Imagen",
 								"format": "image"
 							},
 							"title": {
-								"label": "Title",
+								"label": "Título",
 								"format": "text"
 							},
 							"price": {
-								"label": "Price",
-								"format": "text"
-							},
-							"discount": {
-								"label": "Discount",
+								"label": "Precio",
 								"format": "text"
 							},
 							"oldPrice": {
-								"label": "Original Price",
+								"label": "Precio Original",
 								"format": "text"
 							},
-							"productCount": {
-								"label": "Product Count",
+							"discount": {
+								"label": "Descuento",
 								"format": "text"
+							},
+							"priceNumeric": {
+								"label": "Precio (Numérico)",
+								"format": "number"
+							},
+							"oldPriceNumeric": {
+								"label": "Precio Original (Numérico)",
+								"format": "number"
 							},
 							"url": {
-								"label": "Link",
+								"label": "Enlace",
 								"format": "link"
 							}
 						}

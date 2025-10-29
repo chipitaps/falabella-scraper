@@ -1,41 +1,41 @@
 {
-    "title": "Falabella Product Search",
+    "title": "Búsqueda de Productos Falabella",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
             "searchFor": {
-                "title": "Search For",
+                "title": "Buscar",
                 "type": "string",
-                "description": "What do you want to search for?",
+                "description": "¿Qué deseas buscar?",
                 "editor": "select",
                 "prefill": "items",
                 "enum": ["items", "pages"],
-                "enumTitles": ["Items (Individual Products)", "Pages (Search Result Pages)"]
+                "enumTitles": ["Productos (Individuales)", "Páginas (Páginas de Resultados)"]
             },
         "searchQuery": {
-            "title": "Search Query",
+            "title": "Consulta de Búsqueda",
             "type": "string",
-            "description": "What product are you looking for? (e.g., laptop, smartphone, sofa)",
+            "description": "¿Qué producto estás buscando? (ej., laptop, smartphone, sofá)",
             "editor": "textfield",
             "example": "laptop"
         },
             "maxProducts": {
-                "title": "Maximum Products/Pages",
+                "title": "Máximo de Productos/Páginas",
                 "type": "integer",
-                "description": "For Items: max products to scrape. For Pages: number of pages to scrape (e.g., 5 = scrape pages 1-5)",
+                "description": "Para Productos: cantidad máxima a extraer. Para Páginas: número de páginas (ej., 5 = páginas 1-5)",
                 "minimum": 1,
                 "prefill": 25
             },
         "minPrice": {
-            "title": "Minimum Price (COP)",
+            "title": "Precio Mínimo (COP)",
             "type": "integer",
-            "description": "Filter products by minimum price in Colombian Pesos (optional)",
+            "description": "Filtrar productos por precio mínimo en Pesos Colombianos (opcional)",
             "minimum": 0
         },
         "maxPrice": {
-            "title": "Maximum Price (COP)",
+            "title": "Precio Máximo (COP)",
             "type": "integer",
-            "description": "Filter products by maximum price in Colombian Pesos (optional)",
+            "description": "Filtrar productos por precio máximo en Pesos Colombianos (opcional)",
             "minimum": 0
         }
     },
