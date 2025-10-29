@@ -22,7 +22,7 @@ COPY --chown=myuser:myuser . ./
 RUN npm run build
 
 # Create final image
-FROM apify/actor-node-playwright-chromium:22
+FROM apify/actor-node-playwright-chrome:latest
 
 # Check preinstalled packages
 RUN npm ls crawlee apify puppeteer playwright
