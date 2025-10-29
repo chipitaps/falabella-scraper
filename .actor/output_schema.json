@@ -5,18 +5,7 @@
         "products": {
             "type": "array",
             "title": "Products",
-            "items": {
-                "type": "object",
-                "properties": [
-                    "brand",
-                    "title",
-                    "price",
-                    "oldPrice",
-                    "discount",
-                    "url",
-                    "image"
-                ]
-            }
+            "template": "{{links.apiDefaultDatasetUrl}}/items?view=overview"
         }
     }
 }
