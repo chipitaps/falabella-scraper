@@ -121,45 +121,34 @@ console.log(`Fetching ${searchFor}...`);
 const products: { title: string; price: string; oldPrice: string; discount: string; url: string; image: string }[] = [];
 
 const crawler = new PlaywrightCrawler({
-  launchContext: { launchOptions: { headless: true } },
+  launchContext: { 
+    launchOptions: { 
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+    } 
+  },
   maxRequestsPerCrawl: searchFor === 'pages' ? (maxProducts || 10) : 1,
-  requestHandlerTimeoutSecs: 120,
+  maxConcurrency: 1, // Reduce concurrency to avoid CPU overload
+  requestHandlerTimeoutSecs: 180,
   async requestHandler({ page, request }) {
     console.log(`Processing... ${request.url}`);
-    await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await page.waitForSelector('img', { timeout: 5000 }).catch(() => {});
+    await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: 90000 });
     
-    // Progressive scroll to trigger lazy-loaded images and wait for them to load
-    await page.evaluate(async () => {
-      const scrollHeight = document.body.scrollHeight;
-      const steps = 5;
-      for (let i = 0; i <= steps; i++) {
-        window.scrollTo(0, (scrollHeight / steps) * i);
-        await new Promise(r => setTimeout(r, 500));
-      }
-      // Scroll back to top
-      window.scrollTo(0, 0);
-      await new Promise(r => setTimeout(r, 500));
+    // Quick single scroll to trigger lazy loading
+    await page.evaluate(() => {
+      window.scrollTo(0, document.body.scrollHeight / 2);
     });
+    await page.waitForTimeout(800);
     
-    // Wait for all images to have src attributes
-    await page.waitForFunction(() => {
-      const images = Array.from(document.querySelectorAll('img'));
-      const withSrc = images.filter(img => img.src && img.src !== '' && !img.src.includes('data:image'));
-      return images.length > 0 && withSrc.length > images.length * 0.7;
-    }, { timeout: 10000 }).catch(() => {});
-    
-    await page.waitForTimeout(1500);
-    
-    // Extract images directly from the DOM via Playwright
+    // Extract images directly from the DOM via Playwright (quick extraction)
     const imageMap = new Map<string, string>();
     const imageData = await page.evaluate(() => {
       const results: Array<{url: string; image: string}> = [];
       document.querySelectorAll('a[href]').forEach((link) => {
         const href = (link as HTMLAnchorElement).href;
-        if (href && (href.includes('/product/') || href.includes('/falabella-co/'))) {
+        if (href && href.includes('/product/')) {
           const img = link.querySelector('img');
-          if (img && img.src && !img.src.includes('placeholder') && !img.src.includes('1x1')) {
+          if (img && img.src && !img.src.includes('placeholder')) {
             results.push({ url: href, image: img.src });
           }
         }
