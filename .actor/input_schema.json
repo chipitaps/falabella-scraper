@@ -8,7 +8,7 @@
             "type": "string",
             "description": "What do you want to search for?",
             "editor": "select",
-            "default": "items",
+            "prefill": "items",
             "enum": ["items", "pages"],
             "enumTitles": ["Items (Individual Products)", "Pages (Categories/Collections)"]
         },
@@ -22,9 +22,9 @@
         "maxProducts": {
             "title": "Maximum Products",
             "type": "integer",
-            "description": "How many products do you want to scrape? (0 = unlimited)",
-            "default": 100,
-            "minimum": 0
+            "description": "How many products do you want to scrape?",
+            "minimum": 1,
+            "prefill": 25
         },
         "minPrice": {
             "title": "Minimum Price (COP)",
