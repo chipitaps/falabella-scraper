@@ -11,6 +11,14 @@ const extractBrand = (c: cheerio.Cheerio<any>): string => {
     const text = boldElements.eq(i).text().trim();
     if (text && text.length > 1 && text.length < 50 && !/\$|price|cop|por|patrocinado|llega|retira/i.test(text)) return text;
   }
+  
+  // Fallback: extract from title or text
+  const text = c.text();
+  const commonBrands = ['DELL', 'HP', 'LENOVO', 'ASUS', 'ACER', 'APPLE', 'MSI', 'SAMSUNG', 'LG', 'TOSHIBA', 'SONY', 'HUAWEI', 'MICROSOFT', 'RAZER'];
+  for (const b of commonBrands) {
+    if (new RegExp(`\\b${b}\\b`, 'i').test(text)) return b;
+  }
+  
   return 'Unknown';
 };
 
