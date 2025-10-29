@@ -39,5 +39,5 @@
             "minimum": 0
         }
     },
-    "required": ["searchQuery", "searchFor","maxProducts"]
+    "required": ["searchQuery","searchFor","maxProducts"]
 }
