@@ -134,7 +134,7 @@ const crawler = new PlaywrightCrawler({
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
     } 
   },
-  maxRequestsPerCrawl: searchFor === 'pages' ? (maxProducts || 10) : 1,
+  maxRequestsPerCrawl: 999, // Will stop automatically when maxProducts is reached
   maxConcurrency: 1, // Reduce concurrency to avoid CPU overload
   requestHandlerTimeoutSecs: 180,
   async requestHandler({ page, request }) {
@@ -190,40 +190,48 @@ const crawler = new PlaywrightCrawler({
     }
     
     productElements.each(function() {
+      // Stop if we've reached maxProducts limit
+      if (maxProducts > 0 && products.length >= maxProducts) {
+        return false; // Stop iteration
+      }
+      
       const product = extractProduct($, $(this), imageMap);
       if (product) {
         products.push(product);
       }
       return true;
     });
+    
+    // For items mode, stop crawler if we've reached the limit
+    if (searchFor === 'items' && maxProducts > 0 && products.length >= maxProducts) {
+      await crawler.autoscaledPool?.abort();
+    }
   },
 });
 
 // Generate URLs to crawl
 const urlsToScrape: string[] = [];
+const priceFilter = (minPrice || maxPrice) ? `&r.derived.price.search=${maxPrice || 999999999}%3A%3A${minPrice || 0}` : '';
+
 if (searchFor === 'pages') {
   // Generate multiple page URLs with price filter
   const numPages = maxProducts || 10;
-  const priceFilter = (minPrice || maxPrice) ? `&r.derived.price.search=${maxPrice || 999999999}%3A%3A${minPrice || 0}` : '';
   for (let pageNum = 1; pageNum <= numPages; pageNum++) {
     urlsToScrape.push(`https://www.falabella.com.co/falabella-co/search?Ntt=${encodeURIComponent(searchQuery)}&page=${pageNum}${priceFilter}`);
   }
 } else {
-  // Single page for items
-  urlsToScrape.push(targetUrl);
+  // For items mode, estimate how many pages we might need (assuming ~50-60 items per page)
+  const estimatedPages = Math.ceil((maxProducts || 100) / 50) + 1; // Add 1 extra page as buffer
+  for (let pageNum = 1; pageNum <= Math.min(estimatedPages, 10); pageNum++) { // Max 10 pages
+    urlsToScrape.push(`https://www.falabella.com.co/falabella-co/search?Ntt=${encodeURIComponent(searchQuery)}&page=${pageNum}${priceFilter}`);
+  }
 }
 
 await crawler.run(urlsToScrape);
 
-// Deduplicate products by URL
-const seen = new Set<string>();
-const finalResults = products.filter(p => {
-  if (seen.has(p.url)) return false;
-  seen.add(p.url);
-  return true;
-});
+const finalResults = products;
 
-console.log(`Found ${finalResults.length} items from ${searchFor === 'pages' ? urlsToScrape.length + ' pages' : '1 page'}.`);
+console.log(`Found ${finalResults.length} items from ${searchFor === 'pages' ? urlsToScrape.length + ' pages' : 'multiple pages'}.`);
 console.log('Done.');
 //@ts-ignore
 await Actor.pushData(finalResults);
