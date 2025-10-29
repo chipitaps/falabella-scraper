@@ -1,14 +1,43 @@
 {
-    "title": "Scrape data from a web page",
+    "title": "Falabella Product Search",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-        "url": {
-            "title": "URL of the page",
+        "searchFor": {
+            "title": "Search For",
             "type": "string",
-            "description": "The URL of website you want to get the data from.",
-            "editor": "textfield"
+            "description": "What do you want to search for?",
+            "editor": "select",
+            "default": "items",
+            "enum": ["items", "pages"],
+            "enumTitles": ["Items (Individual Products)", "Pages (Categories/Collections)"]
+        },
+        "searchQuery": {
+            "title": "Search Query",
+            "type": "string",
+            "description": "What product are you looking for? (e.g., laptop, smartphone, sofa)",
+            "editor": "textfield",
+            "example": "laptop"
+        },
+        "maxProducts": {
+            "title": "Maximum Products",
+            "type": "integer",
+            "description": "How many products do you want to scrape? (0 = unlimited)",
+            "default": 100,
+            "minimum": 0
+        },
+        "minPrice": {
+            "title": "Minimum Price (COP)",
+            "type": "integer",
+            "description": "Filter products by minimum price in Colombian Pesos (optional)",
+            "minimum": 0
+        },
+        "maxPrice": {
+            "title": "Maximum Price (COP)",
+            "type": "integer",
+            "description": "Filter products by maximum price in Colombian Pesos (optional)",
+            "minimum": 0
         }
     },
-    "required": ["url"]
+    "required": ["searchQuery", "searchFor"]
 }

@@ -1,12 +1,12 @@
 {
 	"actorSpecification": 1,
-	"name": "test",
-	"title": "Scrape single page in TypeScript",
-	"description": "Scrape data from single page with provided URL.",
-	"version": "0.0",
+	"name": "falabella-product-scraper",
+	"title": "Falabella Product Scraper",
+	"description": "Scrapes product listings from Falabella.com.co based on search queries. Returns structured product data including brand, title, price, discounts, and product URLs. Supports price filtering and max product limits.",
+	"version": "1.0",
 	"meta": {
 		"templateId": "ts-start",
-		"model": "<FILL-IN-MODEL>"
+		"model": "claude-sonnet-4"
 	},
 	"input": "./input_schema.json",
 	"output": "./output_schema.json",

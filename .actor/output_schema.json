@@ -1,11 +1,22 @@
 {
     "actorOutputSchemaVersion": 1,
-    "title": "Output schema",
+    "title": "Falabella Product Scraper Output",
     "properties": {
-        "overview": {
-            "type": "string",
-            "title": "Overview",
-            "template": "{{links.apiDefaultDatasetUrl}}/items?view=overview"
+        "products": {
+            "type": "array",
+            "title": "Products",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "brand": { "type": "string", "title": "Brand" },
+                    "title": { "type": "string", "title": "Product Title" },
+                    "price": { "type": "string", "title": "Current Price" },
+                    "oldPrice": { "type": "string", "title": "Original Price" },
+                    "discount": { "type": "string", "title": "Discount" },
+                    "url": { "type": "string", "title": "Product URL", "format": "uri" },
+                    "image": { "type": "string", "title": "Image URL", "format": "uri" }
+                }
+            }
         }
     }
 }

@@ -1,23 +1,30 @@
 {
     "actorSpecification": 1,
-    "fields": {},
+    "fields": {
+        "brand": { "type": "string", "title": "Brand" },
+        "title": { "type": "string", "title": "Product" },
+        "price": { "type": "string", "title": "Price" },
+        "oldPrice": { "type": "string", "title": "Original Price" },
+        "discount": { "type": "string", "title": "Discount" },
+        "url": { "type": "string", "title": "URL" },
+        "image": { "type": "string", "title": "Image" }
+    },
     "views": {
         "overview": {
-            "title": "Overview",
+            "title": "Product Overview",
             "transformation": {
-                "fields": ["level", "text"]
+                "fields": ["image", "brand", "title", "price", "oldPrice", "discount", "url"]
             },
             "display": {
                 "component": "table",
                 "properties": {
-                    "level": {
-                        "label": "Level",
-                        "format": "text"
-                    },
-                    "text": {
-                        "label": "Text",
-                        "format": "text"
-                    }
+                    "image": { "label": "Image", "format": "image" },
+                    "brand": { "label": "Brand", "format": "text" },
+                    "title": { "label": "Product", "format": "text" },
+                    "price": { "label": "Price", "format": "text" },
+                    "oldPrice": { "label": "Original Price", "format": "text" },
+                    "discount": { "label": "Discount", "format": "text" },
+                    "url": { "label": "Product Link", "format": "link" }
                 }
             }
         }
