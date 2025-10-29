@@ -119,15 +119,14 @@ const targetUrl = `https://www.falabella.com.co/falabella-co/search?Ntt=${encode
 console.log(`Fetching ${searchFor}...`);
 
 const products: { title: string; price: string; oldPrice: string; discount: string; url: string; image: string }[] = [];
-const pages: { title: string; url: string; image: string; productCount?: string }[] = [];
 
 const crawler = new PlaywrightCrawler({
   launchContext: { launchOptions: { headless: true } },
-  maxRequestsPerCrawl: 1,
+  maxRequestsPerCrawl: searchFor === 'pages' ? (maxProducts || 10) : 1,
   requestHandlerTimeoutSecs: 120,
-  async requestHandler({ page }) {
-    console.log('Processing...');
-    await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  async requestHandler({ page, request }) {
+    console.log(`Processing... ${request.url}`);
+    await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.waitForSelector('img', { timeout: 5000 }).catch(() => {});
     
     // Progressive scroll to trigger lazy-loaded images and wait for them to load
@@ -171,54 +170,43 @@ const crawler = new PlaywrightCrawler({
     
     const $ = cheerio.load(await page.content());
     
-    if (searchFor === 'items') {
-      let productElements = $('[class*="product-item"], [class*="ProductItem"], [data-testid*="product"], [data-pod*="product"]');
-      if (productElements.length === 0) {
-        productElements = $('*').filter(function() {
-          const text = $(this).text();
-          return /\$\s*[\d,]+/.test(text) && text.length > 30 && text.length < 1000 && $(this).find('a[href]').length > 0;
-        }) as any;
-      }
-      
-      productElements.each(function() {
-        if (maxProducts > 0 && products.length >= maxProducts) return false;
-        const product = extractProduct($, $(this), imageMap);
-        if (product && (!minPrice || parsePrice(product.price) >= minPrice) && (!maxPrice || parsePrice(product.price) <= maxPrice)) {
-          products.push(product);
-        }
-        return true;
-      });
-    } else {
-      $('a[href]').each(function() {
-        if (maxProducts > 0 && pages.length >= maxProducts) return false;
-        const href = $(this).attr('href') || '';
-        if (href.includes('/category/') || href.includes('/collection/') || href.includes('/brand/') || href.includes('/search') || href.match(/falabella-co\/[a-z\-]+\/?$/)) {
-          const title = $(this).text().trim() || $(this).attr('title') || $(this).attr('aria-label') || '';
-          if (title && title.length > 2 && title.length < 200 && !title.match(/^\$|precio|comprar|agregar|ver más/i)) {
-            const fullUrl = href.startsWith('http') ? href : `https://www.falabella.com.co${href}`;
-            if (!pages.find(p => p.url === fullUrl)) {
-              pages.push({ 
-                title, 
-                url: fullUrl, 
-                image: $(this).find('img').attr('src') || $(this).find('img').attr('data-src') || '', 
-                productCount: $(this).find('[class*="count"], [class*="total"], [class*="result"]').text().trim() 
-              });
-            }
-          }
-        }
-        return true;
-      });
+    // Extract products from the page (same logic for both items and pages)
+    let productElements = $('[class*="product-item"], [class*="ProductItem"], [data-testid*="product"], [data-pod*="product"]');
+    if (productElements.length === 0) {
+      productElements = $('*').filter(function() {
+        const text = $(this).text();
+        return /\$\s*[\d,]+/.test(text) && text.length > 30 && text.length < 1000 && $(this).find('a[href]').length > 0;
+      }) as any;
     }
+    
+    productElements.each(function() {
+      const product = extractProduct($, $(this), imageMap);
+      if (product && (!minPrice || parsePrice(product.price) >= minPrice) && (!maxPrice || parsePrice(product.price) <= maxPrice)) {
+        products.push(product);
+      }
+      return true;
+    });
   },
 });
 
-await crawler.run([targetUrl]);
+// Generate URLs to crawl
+const urlsToScrape: string[] = [];
+if (searchFor === 'pages') {
+  // Generate multiple page URLs
+  const numPages = maxProducts || 10;
+  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    urlsToScrape.push(`https://www.falabella.com.co/falabella-co/search?Ntt=${encodeURIComponent(searchQuery)}&page=${pageNum}`);
+  }
+} else {
+  // Single page for items
+  urlsToScrape.push(targetUrl);
+}
 
-const finalResults = searchFor === 'items' 
-  ? products.slice(0, maxProducts || products.length)
-  : pages.slice(0, maxProducts || pages.length);
+await crawler.run(urlsToScrape);
 
-console.log(`Found ${finalResults.length} ${searchFor}.`);
+const finalResults = products;
+
+console.log(`Found ${finalResults.length} items from ${searchFor === 'pages' ? urlsToScrape.length + ' pages' : '1 page'}.`);
 console.log('Done.');
 //@ts-ignore
 await Actor.pushData(finalResults);

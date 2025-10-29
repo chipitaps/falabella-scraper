@@ -3,15 +3,15 @@
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-        "searchFor": {
-            "title": "Search For",
-            "type": "string",
-            "description": "What do you want to search for?",
-            "editor": "select",
-            "prefill": "items",
-            "enum": ["items", "pages"],
-            "enumTitles": ["Items (Individual Products)", "Pages (Categories/Collections)"]
-        },
+            "searchFor": {
+                "title": "Search For",
+                "type": "string",
+                "description": "What do you want to search for?",
+                "editor": "select",
+                "prefill": "items",
+                "enum": ["items", "pages"],
+                "enumTitles": ["Items (Individual Products)", "Pages (Search Result Pages)"]
+            },
         "searchQuery": {
             "title": "Search Query",
             "type": "string",
@@ -19,13 +19,13 @@
             "editor": "textfield",
             "example": "laptop"
         },
-        "maxProducts": {
-            "title": "Maximum Products",
-            "type": "integer",
-            "description": "How many products do you want to scrape?",
-            "minimum": 1,
-            "prefill": 25
-        },
+            "maxProducts": {
+                "title": "Maximum Products/Pages",
+                "type": "integer",
+                "description": "For Items: max products to scrape. For Pages: number of pages to scrape (e.g., 5 = scrape pages 1-5)",
+                "minimum": 1,
+                "prefill": 25
+            },
         "minPrice": {
             "title": "Minimum Price (COP)",
             "type": "integer",
