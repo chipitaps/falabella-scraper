@@ -65,12 +65,12 @@ const extractImage = (c: cheerio.Cheerio<any>, imageMap?: Map<string, string>): 
   return '';
 };
 
-const extractDiscount = (c: cheerio.Cheerio<any>): string => c.find('[class*="discount"], [class*="Discount"]').first().text().trim().match(/-?\d+%/)?.[0] || '';
+const extractDiscount = (c: cheerio.Cheerio<any>): string => c.find('[class*="discount"], [class*="Discount"]').first().text().trim().match(/-?\d+%/)?.[0] || 'N/A';
 
 const extractOldPrice = (c: cheerio.Cheerio<any>): string => {
   const oldPrice = c.find('[class*="crossed"], [class*="old-price"], [class*="original"], [class*="before"], del, s, strike').first().text().trim();
   const match = oldPrice.match(/\$\s*[\d,.]+/)?.[0];
-  return match ? match.replace(/\$\s+/, '$ ').trim() : '';
+  return match ? match.replace(/\$\s+/, '$ ').trim() : 'N/A';
 };
 
 const extractProduct = ($: cheerio.CheerioAPI, c: cheerio.Cheerio<any>, imageMap?: Map<string, string>) => {
@@ -82,13 +82,18 @@ const extractProduct = ($: cheerio.CheerioAPI, c: cheerio.Cheerio<any>, imageMap
   const discount = extractDiscount(c);
   
   // Calculate old price from discount if missing
-  if (!oldPrice && discount) {
+  if (oldPrice === 'N/A' && discount !== 'N/A') {
     const discountPercent = parseInt(discount.replace(/[^\d]/g, ''));
     if (discountPercent > 0 && discountPercent < 100) {
       const currentPrice = parsePrice(price);
       const calculatedOldPrice = Math.round(currentPrice / (1 - discountPercent / 100));
       oldPrice = `$ ${calculatedOldPrice.toLocaleString('es-CO')}`;
     }
+  }
+  
+  // If discount is N/A, oldPrice should also be N/A
+  if (discount === 'N/A') {
+    oldPrice = 'N/A';
   }
   
   return { title, price, oldPrice, discount, url: extractUrl($, c), image: extractImage(c, imageMap) };

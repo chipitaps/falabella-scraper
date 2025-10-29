@@ -24,8 +24,8 @@
 							"image",
 							"title",
 							"price",
-							"oldPrice",
 							"discount",
+							"oldPrice",
 							"productCount",
 							"url"
 						]
@@ -45,12 +45,12 @@
 								"label": "Price",
 								"format": "text"
 							},
-							"oldPrice": {
-								"label": "Original Price",
-								"format": "text"
-							},
 							"discount": {
 								"label": "Discount",
+								"format": "text"
+							},
+							"oldPrice": {
+								"label": "Original Price",
 								"format": "text"
 							},
 							"productCount": {
