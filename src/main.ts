@@ -141,13 +141,24 @@ const crawler = new PlaywrightCrawler({
     console.log(`Processing... ${request.url}`);
     await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: 90000 });
     
-    // Quick single scroll to trigger lazy loading
-    await page.evaluate(() => {
-      window.scrollTo(0, document.body.scrollHeight / 2);
-    });
-    await page.waitForTimeout(800);
+    // Wait for images to start loading
+    await page.waitForSelector('img', { timeout: 5000 }).catch(() => {});
     
-    // Extract images directly from the DOM via Playwright (quick extraction)
+    // Progressive scroll to trigger all lazy-loaded images
+    await page.evaluate(async () => {
+      const distance = 500;
+      const delay = 100;
+      while (window.scrollY + window.innerHeight < document.body.scrollHeight) {
+        window.scrollBy(0, distance);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      window.scrollTo(0, 0);
+    });
+    
+    // Wait for images to load
+    await page.waitForTimeout(2000);
+    
+    // Extract images directly from the DOM via Playwright
     const imageMap = new Map<string, string>();
     const imageData = await page.evaluate(() => {
       const results: Array<{url: string; image: string}> = [];
@@ -155,8 +166,11 @@ const crawler = new PlaywrightCrawler({
         const href = (link as HTMLAnchorElement).href;
         if (href && href.includes('/product/')) {
           const img = link.querySelector('img');
-          if (img && img.src && !img.src.includes('placeholder')) {
-            results.push({ url: href, image: img.src });
+          if (img) {
+            const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || '';
+            if (src && !src.includes('placeholder') && !src.includes('1x1')) {
+              results.push({ url: href, image: src });
+            }
           }
         }
       });
@@ -201,7 +215,13 @@ if (searchFor === 'pages') {
 
 await crawler.run(urlsToScrape);
 
-const finalResults = products;
+// Deduplicate products by URL
+const seen = new Set<string>();
+const finalResults = products.filter(p => {
+  if (seen.has(p.url)) return false;
+  seen.add(p.url);
+  return true;
+});
 
 console.log(`Found ${finalResults.length} items from ${searchFor === 'pages' ? urlsToScrape.length + ' pages' : '1 page'}.`);
 console.log('Done.');
