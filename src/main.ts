@@ -5,31 +5,13 @@ import * as cheerio from 'cheerio';
 await Actor.init();
 
 // Helper functions
-const extractBrand = (c: cheerio.Cheerio<any>): string => {
-  const boldElements = c.find('b, strong');
-  for (let i = 0; i < boldElements.length; i++) {
-    const text = boldElements.eq(i).text().trim();
-    if (text && text.length > 1 && text.length < 50 && !/\$|price|cop|por|patrocinado|llega|retira/i.test(text)) return text;
-  }
-  
-  // Fallback: extract from title or text
-  const text = c.text();
-  const commonBrands = ['DELL', 'HP', 'LENOVO', 'ASUS', 'ACER', 'APPLE', 'MSI', 'SAMSUNG', 'LG', 'TOSHIBA', 'SONY', 'HUAWEI', 'MICROSOFT', 'RAZER'];
-  for (const b of commonBrands) {
-    if (new RegExp(`\\b${b}\\b`, 'i').test(text)) return b;
-  }
-  
-  return 'Unknown';
-};
-
-const extractTitle = (c: cheerio.Cheerio<any>, brand?: string): string => {
+const extractTitle = (c: cheerio.Cheerio<any>): string => {
   let title = c.find('a[title]').first().attr('title') || c.find('img[alt]').first().attr('alt') || 
-              c.text().replace(/\$[\s\d,.]+/g, '').replace(/-?\d+%/g, '').replace(/Patrocinado|Agregar al Carro|Llega mañana|Retira.*?min|Por .*/gi, '').replace(/\s+/g, ' ').trim();
+              c.text().replace(/\$[\s\d,.]+/g, '').replace(/-?\d+%/g, '').replace(/Envío gratis|Patrocinado|Agregar al Carro|Llega mañana|Retira.*?min|Por .*|Solo en falabella\.com|Con tu tarjeta CMR/gi, '').replace(/\s+/g, ' ').trim();
   
-  if (brand && brand !== 'Unknown') {
-    const brandPattern = new RegExp(`^${brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*-?\\s*`, 'i');
-    title = title.replace(brandPattern, '').trim();
-  }
+  // Fix spacing issues where brand name is concatenated with product name
+  title = title.replace(/([A-Z]{2,})([A-Z][a-z])/g, '$1 $2');
+  
   return title || 'Unknown Product';
 };
 
@@ -92,8 +74,7 @@ const extractOldPrice = (c: cheerio.Cheerio<any>): string => {
 };
 
 const extractProduct = ($: cheerio.CheerioAPI, c: cheerio.Cheerio<any>, imageMap?: Map<string, string>) => {
-  const brand = extractBrand(c);
-  const title = extractTitle(c, brand);
+  const title = extractTitle(c);
   const price = extractPrice(c);
   if (!title || title === 'Unknown Product' || !price || price.length < 2) return null;
   
@@ -110,7 +91,7 @@ const extractProduct = ($: cheerio.CheerioAPI, c: cheerio.Cheerio<any>, imageMap
     }
   }
   
-  return { brand, title, price, oldPrice, discount, url: extractUrl($, c), image: extractImage(c, imageMap) };
+  return { title, price, oldPrice, discount, url: extractUrl($, c), image: extractImage(c, imageMap) };
 };
 
 const parsePrice = (priceStr: string): number => parseInt(priceStr.replace(/[^\d]/g, '')) || 0;
@@ -132,7 +113,7 @@ const targetUrl = `https://www.falabella.com.co/falabella-co/search?Ntt=${encode
 
 console.log(`Fetching ${searchFor}...`);
 
-const products: { brand: string; title: string; price: string; oldPrice: string; discount: string; url: string; image: string }[] = [];
+const products: { title: string; price: string; oldPrice: string; discount: string; url: string; image: string }[] = [];
 const pages: { title: string; url: string; image: string; productCount?: string }[] = [];
 
 const crawler = new PlaywrightCrawler({
@@ -141,7 +122,7 @@ const crawler = new PlaywrightCrawler({
   requestHandlerTimeoutSecs: 120,
   async requestHandler({ page }) {
     console.log('Processing...');
-    await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 90000 });
+    await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.waitForSelector('img', { timeout: 5000 }).catch(() => {});
     
     // Progressive scroll to trigger lazy-loaded images and wait for them to load

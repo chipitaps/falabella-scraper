@@ -10,60 +10,57 @@
 	},
 	"input": "./input_schema.json",
 	"output": "./output_schema.json",
-	"dataset": {
-		"actorSpecification": 1,
-		"title": "Dataset",
-		"description": "Scraped products or pages from Falabella.com.co",
-		"views": {
-			"results": {
-				"title": "Overview",
-				"description": "It can take about one minute until the first results are available.",
-				"transformation": {
-					"fields": [
-						"image",
-						"brand",
-						"title",
-						"price",
-						"oldPrice",
-						"discount",
-						"productCount",
-						"url"
-					]
-				},
-				"display": {
-					"component": "table",
-					"properties": {
-						"image": {
-							"label": "Image",
-							"format": "image"
-						},
-						"brand": {
-							"label": "Brand",
-							"format": "text"
-						},
-						"title": {
-							"label": "Title",
-							"format": "text"
-						},
-						"price": {
-							"label": "Price",
-							"format": "text"
-						},
-						"oldPrice": {
-							"label": "Original Price",
-							"format": "text"
-						},
-						"discount": {
-							"label": "Discount",
-							"format": "text"
-						},
-						"productCount": {
-							"label": "Product Count",
-							"format": "text"
-						},
-						"url": {
-							"label": "Link",
-							"format": "link"
+	"storages": {
+		"dataset": {
+			"actorSpecification": 1,
+			"title": "Dataset",
+			"description": "Scraped products or pages from Falabella.com.co",
+			"views": {
+				"results": {
+					"title": "Overview",
+					"description": "It can take about one minute until the first results are available.",
+					"transformation": {
+						"fields": [
+							"image",
+							"title",
+							"price",
+							"oldPrice",
+							"discount",
+							"productCount",
+							"url"
+						]
+					},
+					"display": {
+						"component": "table",
+						"properties": {
+							"image": {
+								"label": "Image",
+								"format": "image"
+							},
+							"title": {
+								"label": "Title",
+								"format": "text"
+							},
+							"price": {
+								"label": "Price",
+								"format": "text"
+							},
+							"oldPrice": {
+								"label": "Original Price",
+								"format": "text"
+							},
+							"discount": {
+								"label": "Discount",
+								"format": "text"
+							},
+							"productCount": {
+								"label": "Product Count",
+								"format": "text"
+							},
+							"url": {
+								"label": "Link",
+								"format": "link"
+							}
 						}
 					}
 				}
