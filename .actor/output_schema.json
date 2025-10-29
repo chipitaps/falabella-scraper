@@ -2,10 +2,10 @@
     "actorOutputSchemaVersion": 1,
     "title": "Falabella Product Scraper Output",
     "properties": {
-        "products": {
+        "dataset": {
             "type": "string",
-            "title": "Products",
-            "template": "{{links.apiDefaultDatasetUrl}}/items?view=overview"
+            "title": "Dataset",
+            "template": "{{links.apiDefaultDatasetUrl}}/items"
         }
     }
 }
