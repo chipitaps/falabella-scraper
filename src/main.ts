@@ -114,7 +114,14 @@ const input = (await Actor.getInput()) as InputSchema;
 if (!input?.searchQuery?.trim()) throw new Error('Search query is required!');
 
 const { searchFor = 'items', searchQuery, maxProducts = 100, minPrice, maxPrice } = input;
-const targetUrl = `https://www.falabella.com.co/falabella-co/search?Ntt=${encodeURIComponent(searchQuery.trim())}`;
+
+// Build URL with price filter if provided
+let targetUrl = `https://www.falabella.com.co/falabella-co/search?Ntt=${encodeURIComponent(searchQuery.trim())}`;
+if (minPrice || maxPrice) {
+  const min = minPrice || 0;
+  const max = maxPrice || 999999999;
+  targetUrl += `&r.derived.price.search=${max}%3A%3A${min}`;
+}
 
 console.log(`Fetching ${searchFor}...`);
 
@@ -163,14 +170,14 @@ const crawler = new PlaywrightCrawler({
     let productElements = $('[class*="product-item"], [class*="ProductItem"], [data-testid*="product"], [data-pod*="product"]');
     if (productElements.length === 0) {
       productElements = $('*').filter(function() {
-        const text = $(this).text();
+          const text = $(this).text();
         return /\$\s*[\d,]+/.test(text) && text.length > 30 && text.length < 1000 && $(this).find('a[href]').length > 0;
       }) as any;
     }
     
     productElements.each(function() {
       const product = extractProduct($, $(this), imageMap);
-      if (product && (!minPrice || parsePrice(product.price) >= minPrice) && (!maxPrice || parsePrice(product.price) <= maxPrice)) {
+      if (product) {
         products.push(product);
       }
       return true;
@@ -181,10 +188,11 @@ const crawler = new PlaywrightCrawler({
 // Generate URLs to crawl
 const urlsToScrape: string[] = [];
 if (searchFor === 'pages') {
-  // Generate multiple page URLs
+  // Generate multiple page URLs with price filter
   const numPages = maxProducts || 10;
+  const priceFilter = (minPrice || maxPrice) ? `&r.derived.price.search=${maxPrice || 999999999}%3A%3A${minPrice || 0}` : '';
   for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-    urlsToScrape.push(`https://www.falabella.com.co/falabella-co/search?Ntt=${encodeURIComponent(searchQuery)}&page=${pageNum}`);
+    urlsToScrape.push(`https://www.falabella.com.co/falabella-co/search?Ntt=${encodeURIComponent(searchQuery)}&page=${pageNum}${priceFilter}`);
   }
 } else {
   // Single page for items
