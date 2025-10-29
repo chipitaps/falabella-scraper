@@ -53,13 +53,33 @@ const extractUrl = ($: cheerio.CheerioAPI, c: cheerio.Cheerio<any>): string => {
   return (!href || href === '#') ? 'https://www.falabella.com.co/' : (href.startsWith('http') ? href : `https://www.falabella.com.co${href}`);
 };
 
-const extractImage = (c: cheerio.Cheerio<any>): string => {
+const extractImage = (c: cheerio.Cheerio<any>, imageMap?: Map<string, string>): string => {
+  // First try to get from imageMap (pre-extracted from Playwright)
+  if (imageMap) {
+    const url = extractUrl(cheerio.load(''), c);
+    const mappedImage = imageMap.get(url);
+    if (mappedImage) return mappedImage;
+  }
+  
+  // Fallback to cheerio extraction - try multiple attributes
   const imgs = c.find('img');
   for (let i = 0; i < imgs.length; i++) {
     const img = imgs.eq(i);
-    const src = img.attr('src') || img.attr('data-src') || img.attr('data-lazy-src') || img.attr('data-original') || img.attr('srcset')?.split(',')[0]?.split(' ')[0] || '';
-    if (src && !src.includes('placeholder') && !src.includes('icon') && !src.includes('loading') && !src.includes('1x1')) return src.trim();
+    const src = img.attr('src') || img.attr('data-src') || img.attr('data-lazy-src') || img.attr('data-original') || img.attr('data-lazy') || img.attr('data-image') || img.attr('srcset')?.split(',')[0]?.split(' ')[0] || '';
+    if (src && src.length > 5 && !src.includes('placeholder') && !src.includes('icon') && !src.includes('loading') && !src.includes('1x1') && !src.startsWith('data:')) {
+      return src.startsWith('//') ? `https:${src}` : src.trim();
+    }
   }
+  
+  // Last resort: construct image URL from product URL
+  const url = extractUrl(cheerio.load(''), c);
+  const productIdMatch = url.match(/\/product\/(\d{6,})\//);  // Match product ID from URL
+  if (productIdMatch) {
+    const nextNum = url.match(/\/(\d{6,})$/); // The second number after product ID
+    const imageId = nextNum ? nextNum[1] : productIdMatch[1];
+    return `https://media.falabella.com.co/falabellaCO/${imageId}_01/public`;
+  }
+  
   return '';
 };
 
@@ -71,7 +91,7 @@ const extractOldPrice = (c: cheerio.Cheerio<any>): string => {
   return match ? match.replace(/\$\s+/, '$ ').trim() : '';
 };
 
-const extractProduct = ($: cheerio.CheerioAPI, c: cheerio.Cheerio<any>) => {
+const extractProduct = ($: cheerio.CheerioAPI, c: cheerio.Cheerio<any>, imageMap?: Map<string, string>) => {
   const brand = extractBrand(c);
   const title = extractTitle(c, brand);
   const price = extractPrice(c);
@@ -90,7 +110,7 @@ const extractProduct = ($: cheerio.CheerioAPI, c: cheerio.Cheerio<any>) => {
     }
   }
   
-  return { brand, title, price, oldPrice, discount, url: extractUrl($, c), image: extractImage(c) };
+  return { brand, title, price, oldPrice, discount, url: extractUrl($, c), image: extractImage(c, imageMap) };
 };
 
 const parsePrice = (priceStr: string): number => parseInt(priceStr.replace(/[^\d]/g, '')) || 0;
@@ -121,18 +141,47 @@ const crawler = new PlaywrightCrawler({
   requestHandlerTimeoutSecs: 120,
   async requestHandler({ page }) {
     console.log('Processing...');
-    await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
+    await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 90000 });
     await page.waitForSelector('img', { timeout: 5000 }).catch(() => {});
     
-    // Quick scroll to trigger lazy-loaded images
+    // Progressive scroll to trigger lazy-loaded images and wait for them to load
     await page.evaluate(async () => {
-      window.scrollTo(0, document.body.scrollHeight / 2);
-      await new Promise(r => setTimeout(r, 500));
-      window.scrollTo(0, document.body.scrollHeight);
-      await new Promise(r => setTimeout(r, 500));
+      const scrollHeight = document.body.scrollHeight;
+      const steps = 5;
+      for (let i = 0; i <= steps; i++) {
+        window.scrollTo(0, (scrollHeight / steps) * i);
+        await new Promise(r => setTimeout(r, 500));
+      }
+      // Scroll back to top
       window.scrollTo(0, 0);
+      await new Promise(r => setTimeout(r, 500));
     });
-    await page.waitForTimeout(1000);
+    
+    // Wait for all images to have src attributes
+    await page.waitForFunction(() => {
+      const images = Array.from(document.querySelectorAll('img'));
+      const withSrc = images.filter(img => img.src && img.src !== '' && !img.src.includes('data:image'));
+      return images.length > 0 && withSrc.length > images.length * 0.7;
+    }, { timeout: 10000 }).catch(() => {});
+    
+    await page.waitForTimeout(1500);
+    
+    // Extract images directly from the DOM via Playwright
+    const imageMap = new Map<string, string>();
+    const imageData = await page.evaluate(() => {
+      const results: Array<{url: string; image: string}> = [];
+      document.querySelectorAll('a[href]').forEach((link) => {
+        const href = (link as HTMLAnchorElement).href;
+        if (href && (href.includes('/product/') || href.includes('/falabella-co/'))) {
+          const img = link.querySelector('img');
+          if (img && img.src && !img.src.includes('placeholder') && !img.src.includes('1x1')) {
+            results.push({ url: href, image: img.src });
+          }
+        }
+      });
+      return results;
+    });
+    imageData.forEach(item => imageMap.set(item.url, item.image));
     
     const $ = cheerio.load(await page.content());
     
@@ -147,7 +196,7 @@ const crawler = new PlaywrightCrawler({
       
       productElements.each(function() {
         if (maxProducts > 0 && products.length >= maxProducts) return false;
-        const product = extractProduct($, $(this));
+        const product = extractProduct($, $(this), imageMap);
         if (product && (!minPrice || parsePrice(product.price) >= minPrice) && (!maxPrice || parsePrice(product.price) <= maxPrice)) {
           products.push(product);
         }
