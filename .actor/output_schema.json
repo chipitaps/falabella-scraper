@@ -1,0 +1,22 @@
+{
+    "actorOutputSchemaVersion": 1,
+    "title": "Falabella Product Scraper Output",
+    "properties": {
+        "products": {
+            "type": "array",
+            "title": "Products",
+            "items": {
+                "type": "object",
+                "properties": [
+                    "brand",
+                    "title",
+                    "price",
+                    "oldPrice",
+                    "discount",
+                    "url",
+                    "image"
+                ]
+            }
+        }
+    }
+}
